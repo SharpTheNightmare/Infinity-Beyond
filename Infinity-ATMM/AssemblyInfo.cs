@@ -18,9 +18,6 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("98a36aa5-bc60-461d-b871-6eedbf5187af")]
 
-[assembly: MelonInfo(typeof(TestMod), "Alpha Testing Mod Menu", "0.0.1", "Retr0gr4d3")]
-// Game's product name is "AdventureQuest Worlds: Infinity" (with colon) as of
-// build 0.0.235 — MelonLoader matches this string exactly against the Unity
-// product name and refuses to load if it differs. The original mod predates
-// the colon and printed "incompatible" against current builds.
+[assembly: MelonInfo(typeof(TestMod), "Alpha Testing Mod Menu", "0.0.3", "Retr0gr4d3")]
 [assembly: MelonGame("Artix Entertainment, LLC", "AdventureQuest Worlds: Infinity")]
+[assembly: MelonGame("Artix Entertainment, LLC", "AdventureQuest Worlds Infinity")]

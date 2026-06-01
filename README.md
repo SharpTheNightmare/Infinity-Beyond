@@ -5,6 +5,7 @@ Precompiled versions are available in the releases, or you can compile it yourse
 Features:
 
 - [X] Client-side FakeDev
+  - [X] Change accesslevels and name colouring
 - [X] Loaders:
   - [x] Shop
   - [x] Merge
@@ -15,6 +16,7 @@ Features:
   - [x] Sniffer (log Server + Client packets)
   - [x] Sender (send commands to the server)
   - [x] Receiver (fake packets from the AQ2D_Server)
+- [x] Groundwork for quest automation
 - [ ] More to come...
 
 Feel free to open pull requests and contribute.

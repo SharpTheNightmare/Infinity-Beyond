@@ -83,11 +83,11 @@
     gets a ready-to-distribute artifact without needing the game installed.
   -->
   <Target Name="CopyToBuildDir" AfterTargets="Build">
-    <MakeDir Directories="$(SolutionDir)build" />
+    <MakeDir Directories="$(MSBuildProjectDirectory)\..\build" />
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll"
-          DestinationFolder="$(SolutionDir)build"
+          DestinationFolder="$(MSBuildProjectDirectory)\..\build"
           OverwriteReadOnlyFiles="true" />
-    <Message Importance="high" Text="[Infinity-Beyond] DLL → $(SolutionDir)build\$(AssemblyName).dll" />
+    <Message Importance="high" Text="[Infinity-Beyond] DLL → $(MSBuildProjectDirectory)\..\build\$(AssemblyName).dll" />
   </Target>
 
   <!-- Also deploy to game Mods folder when it exists (optional, skipped on CI/clean installs) -->

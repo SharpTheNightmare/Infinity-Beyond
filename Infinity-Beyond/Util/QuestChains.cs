@@ -23,14 +23,14 @@ namespace Infinity_TestMod.Util
             public string area = "";   // "" = stay in current area (no tfer)
             public string frame = "";  // "" = stay in current frame (no moveToCell)
             public string pad = "Spawn";
-            public int iters = 1;
+            public int items = 1;
 
             public override string ToString()
             {
                 string loc = "";
                 if (!string.IsNullOrEmpty(area)) loc = $" @ {area}/{frame}/{pad}";
                 else if (!string.IsNullOrEmpty(frame)) loc = $" @ {frame}/{pad}";
-                return $"q{qid}{loc}" + (iters > 1 ? $" ×{iters}" : "");
+                return $"q{qid}{loc}" + (items > 1 ? $" ×{items}" : "");
             }
         }
 
@@ -99,7 +99,7 @@ namespace Infinity_TestMod.Util
                         area = (string)e["area"] ?? "",
                         frame = (string)e["frame"] ?? "",
                         pad = string.IsNullOrEmpty((string)e["pad"]) ? "Spawn" : (string)e["pad"],
-                        iters = Math.Max(1, (int?)e["iters"] ?? 1),
+                        items = Math.Max(1, (int?)e["items"] ?? 1),
                     });
                 }
                 if (entries.Count > 0)

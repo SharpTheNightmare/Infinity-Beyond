@@ -18,6 +18,12 @@ namespace Infinity_TestMod
         public static Rect windowRect = new(20, 100, 300, 610);
         public static readonly Rect ToggleButtonRect = new(10, 20, 64, 64);
 
+        // Auto-skip cutscenes — set true to have CutsceneSkipPatch end
+        // every cutscene the moment Dialogger_Manager.StartCutscene fires.
+        // Honors the cutscene's completeActions (quest progress etc) since
+        // we invoke the same EndPressed() the End button does.
+        public static bool autoSkipCutscenes = false;
+
         public static bool forceMergeShop = false;
         private static string shopIdInput = "";
         private static string questIdInput = "";
@@ -156,7 +162,10 @@ namespace Infinity_TestMod
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Error($"[SkillForge] stub open failed: {ex.Message}");
+                // Keep the full exception (stack trace) — stub open touches
+                // reflection + coroutine paths where the call site alone
+                // rarely tells you which step actually blew up.
+                MelonLogger.Error($"[SkillForge] stub open failed: {ex}");
             }
         }
 
@@ -167,7 +176,7 @@ namespace Infinity_TestMod
             yield return null;
             yield return null;
             try { CharacterClass.OnNodesLoaded?.Invoke(); }
-            catch (System.Exception ex) { MelonLogger.Error($"[SkillForge] OnNodesLoaded invoke failed: {ex.Message}"); }
+            catch (System.Exception ex) { MelonLogger.Error($"[SkillForge] OnNodesLoaded invoke failed: {ex}"); }
         }
 
         private static string FormatTrackTime(float seconds)
@@ -380,9 +389,10 @@ namespace Infinity_TestMod
             // Camera zoom — re-apply every frame so newly-spawned CameraFollow
             // instances (area changes) pick up the active multiplier. Cheap
             // when at default: just a multiplier compare, no FindObjectOfType.
+            // Apply has its own try/catch — wrapping again would just dupe logs.
             if (CameraZoom.Multiplier != CameraZoom.Default)
             {
-                try { CameraZoom.Apply(); } catch (System.Exception ex) { LoggerInstance.Error($"CameraZoom tick: {ex.Message}"); }
+                CameraZoom.Apply();
             }
 
             if (autoskillsActive)
@@ -1171,7 +1181,52 @@ namespace Infinity_TestMod
             {
                 Util.CameraZoom.Reset();
             }
-            curY += 30f + 10f;
+            curY += 30f;
+
+            if (separatorTexture != null)
+            {
+                curY += 6f;
+                GUI.DrawTexture(new Rect(20, curY, 260, 2), separatorTexture);
+                curY += 2f + 6f;
+            }
+            else
+            {
+                curY += 10f;
+            }
+
+            // Section 9: Cutscenes — auto-skip toggle + manual skip.
+            // Skip Now is also useful when the toggle is off and you just
+            // want to bail on the current cutscene without enabling auto.
+            GUI.Label(new Rect(20, curY, 260, 20), "<b>Cutscenes</b>", labelStyle);
+            curY += 22f;
+
+            string autoSkipText = autoSkipCutscenes ? "Auto-Skip: ON" : "Auto-Skip: OFF";
+            if (GUI.Button(new Rect(20, curY, 125, 35), autoSkipText, closeButtonStyle))
+            {
+                autoSkipCutscenes = !autoSkipCutscenes;
+                LoggerInstance.Msg($"Cutscene auto-skip: {(autoSkipCutscenes ? "ON" : "OFF")}");
+            }
+            if (GUI.Button(new Rect(155, curY, 125, 35), "Skip Now", closeButtonStyle))
+            {
+                try
+                {
+                    var mgr = Dialogger_Manager.instance;
+                    if (mgr != null)
+                    {
+                        mgr.EndPressed();
+                        LoggerInstance.Msg("Cutscene: skipped");
+                    }
+                    else
+                    {
+                        LoggerInstance.Msg("Cutscene: no active Dialogger_Manager");
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    LoggerInstance.Error($"Cutscene skip failed: {ex}");
+                }
+            }
+            curY += 35f + 10f;
 
             if (closeButtonStyle != null)
             {
@@ -2662,7 +2717,7 @@ namespace Infinity_TestMod
                 }
                 catch (System.Exception ex)
                 {
-                    MelonLogger.Error($"[SkillForge] open failed: {ex.Message}");
+                    MelonLogger.Error($"[SkillForge] open failed: {ex}");
                 }
             }
             // Stub open — inject synthetic ClassNodes/SkillNodes/AllSkills so

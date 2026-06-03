@@ -6,6 +6,7 @@ using Infinity_TestMod.Util;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using MelonLoader.Utils;
 
 
@@ -93,6 +94,81 @@ namespace Infinity_TestMod
         private static bool jukeboxPickerOpen = false;
         private static string jukeboxFilter = "";
         private static UnityEngine.Vector2 jukeboxScroll = UnityEngine.Vector2.zero;
+
+        // Opens SkillForge and fills CharacterClass static caches with
+        // synthetic data so the UI populates without a real sfUpdate from
+        // the server. The window's Start() subscribes its onNodesLoaded
+        // handler, so we defer the Invoke a couple of frames to make sure
+        // it's hooked before we fire.
+        private static void OpenForgeStubbed()
+        {
+            try
+            {
+                if (UIWindowManager.instance == null)
+                {
+                    MelonLogger.Warning("[SkillForge] UIWindowManager.instance is null — log in first");
+                    return;
+                }
+                UIWindowManager.instance.ShowForge();
+
+                // ClassNodes shape (per ResponseSkillForge "init"):
+                //   { "<Display Name>": { "ID": "<n>", "Skills": { "<slot>": <skillId>, ... } }, ... }
+                // Empty Skills is fine — SelectClass just iterates and does nothing.
+                var classes = new JObject
+                {
+                    ["Stub: Dragonslayer"] = new JObject { ["ID"] = "101", ["Skills"] = new JObject() },
+                    ["Stub: Necromancer"] = new JObject { ["ID"] = "102", ["Skills"] = new JObject() },
+                    ["Stub: Pyromancer"]  = new JObject { ["ID"] = "103", ["Skills"] = new JObject() },
+                };
+                CharacterClass.ClassNodes = classes;
+                CharacterClass.SkillNodes = new System.Collections.Generic.Dictionary<string, JObject>
+                {
+                    ["headers"]      = new JObject(),
+                    ["nodes"]        = new JObject(),
+                    ["helpers"]      = new JObject(),
+                    ["conditionals"] = new JObject(),
+                    ["activators"]   = new JObject(),
+                };
+                // PerformSave's Editing branch accesses SkillData[SelectedSkill].
+                // When the user clicks Save on a stub class without ever
+                // selecting a real skill, SelectedSkill is 0 — so we seed
+                // a placeholder at id 0 to avoid KeyNotFoundException.
+                // The request still goes out to the server (and gets dropped).
+                var stubSkill = new Skill(
+                    id: 0,
+                    action: Skill.ActionType.Regular,
+                    name: "Stub Skill",
+                    description: "placeholder for stubbed Forge UI",
+                    icon: "",
+                    slot: 0,
+                    data: new JArray(),
+                    forgedata: new JArray(),
+                    autohRange: 0f,
+                    autovRange: 0f,
+                    mana: 0);
+                CharacterClass.AllSkills = new System.Collections.Generic.Dictionary<int, Skill>
+                {
+                    [0] = stubSkill,
+                };
+
+                MelonCoroutines.Start(InvokeNodesLoadedDeferred());
+                MelonLogger.Msg("[SkillForge] stub injected (3 classes, empty skills/nodes)");
+            }
+            catch (System.Exception ex)
+            {
+                MelonLogger.Error($"[SkillForge] stub open failed: {ex.Message}");
+            }
+        }
+
+        private static System.Collections.IEnumerator InvokeNodesLoadedDeferred()
+        {
+            // Give Unity a couple of frames so SkillForge.Start() runs and
+            // hooks CharacterClass.OnNodesLoaded before we fire it.
+            yield return null;
+            yield return null;
+            try { CharacterClass.OnNodesLoaded?.Invoke(); }
+            catch (System.Exception ex) { MelonLogger.Error($"[SkillForge] OnNodesLoaded invoke failed: {ex.Message}"); }
+        }
 
         private static string FormatTrackTime(float seconds)
         {
@@ -300,6 +376,14 @@ namespace Infinity_TestMod
 
             // Pet combat-anim driver — no-op when toggle off or no pet.
             try { PetCombatAnimDriver.Tick(); } catch (System.Exception ex) { LoggerInstance.Error($"PetCombatAnim tick: {ex.Message}"); }
+
+            // Camera zoom — re-apply every frame so newly-spawned CameraFollow
+            // instances (area changes) pick up the active multiplier. Cheap
+            // when at default: just a multiplier compare, no FindObjectOfType.
+            if (CameraZoom.Multiplier != CameraZoom.Default)
+            {
+                try { CameraZoom.Apply(); } catch (System.Exception ex) { LoggerInstance.Error($"CameraZoom tick: {ex.Message}"); }
+            }
 
             if (autoskillsActive)
             {
@@ -1060,7 +1144,34 @@ namespace Infinity_TestMod
             {
                 showRetroTestsWindow = !showRetroTestsWindow;
             }
-            curY += 35f + 10f;
+            curY += 35f;
+
+            if (separatorTexture != null)
+            {
+                curY += 6f;
+                GUI.DrawTexture(new Rect(20, curY, 260, 2), separatorTexture);
+                curY += 2f + 6f;
+            }
+            else
+            {
+                curY += 10f;
+            }
+
+            // Section 8: View — camera zoom multiplier.
+            GUI.Label(new Rect(20, curY, 260, 20), $"<b>View</b>  <size=11>Zoom: {Util.CameraZoom.Multiplier:0.00}x</size>", labelStyle);
+            curY += 22f;
+
+            float newZoom = GUI.HorizontalSlider(new Rect(20, curY + 8, 195, 20), Util.CameraZoom.Multiplier, Util.CameraZoom.Min, Util.CameraZoom.Max);
+            if (!Mathf.Approximately(newZoom, Util.CameraZoom.Multiplier))
+            {
+                Util.CameraZoom.Multiplier = newZoom;
+                Util.CameraZoom.Apply();
+            }
+            if (GUI.Button(new Rect(220, curY, 60, 30), "Reset", closeButtonStyle))
+            {
+                Util.CameraZoom.Reset();
+            }
+            curY += 30f + 10f;
 
             if (closeButtonStyle != null)
             {
@@ -2524,6 +2635,42 @@ namespace Infinity_TestMod
             {
                 petCombatAnimActive = !petCombatAnimActive;
                 MelonLogger.Msg($"[PetCombatAnim] {(petCombatAnimActive ? "ON" : "OFF")}");
+            }
+            curY += 40f;
+
+            // Skill Forge — opens the in-game class designer. The legacy
+            // DevConsole button is a no-op, but the feature moved to
+            // UIMiniMenu.ToggleSkillForge and is fully alive. We bypass the
+            // CanOpen() dialog-active check by calling ShowForge() directly.
+            // No AccessLevel gate at this layer; submit calls (sfAdd/sfSave)
+            // go straight to the live server.
+            // Real open — server gates sfInit, panels stay invisible.
+            float forgeW = (innerW - 10) / 2f;
+            if (GUI.Button(new Rect(pad, curY, forgeW, 30), "Open Skill Forge", closeButtonStyle))
+            {
+                try
+                {
+                    if (UIWindowManager.instance != null)
+                    {
+                        UIWindowManager.instance.ShowForge();
+                        MelonLogger.Msg("[SkillForge] opened (real sfInit fired)");
+                    }
+                    else
+                    {
+                        MelonLogger.Warning("[SkillForge] UIWindowManager.instance is null — log in first");
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    MelonLogger.Error($"[SkillForge] open failed: {ex.Message}");
+                }
+            }
+            // Stub open — inject synthetic ClassNodes/SkillNodes/AllSkills so
+            // the UI populates client-side. Any sfAdd/sfSave will still be
+            // silently rejected server-side; this is sightseeing only.
+            if (GUI.Button(new Rect(pad + forgeW + 10, curY, forgeW, 30), "Open w/ Stub Data", closeButtonStyle))
+            {
+                OpenForgeStubbed();
             }
             curY += 40f;
 

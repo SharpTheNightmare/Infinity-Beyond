@@ -286,7 +286,6 @@ namespace Infinity_TestMod
         public static bool interceptActive = false;
         public static bool interceptorLoggingActive = false;
         public static string lastPacketInfo = "None";
-        public static bool forceMergeShop = false;
         private static int currentSkillIndex = 0;
         private static float nextSkillTime = 0f;
 

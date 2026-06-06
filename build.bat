@@ -30,6 +30,10 @@ if exist "%OUT%\%DLL%" (
     echo.
     echo DLL ready at:
     echo %BUILD%\%DLL%
+    echo.
+    echo Closing in 3 seconds...
+    timeout /t 3 /nobreak
+    exit /b 0
 ) else (
     echo WARNING: Build OK but DLL not found at:
     echo %OUT%\%DLL%

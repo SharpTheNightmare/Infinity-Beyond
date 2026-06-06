@@ -792,6 +792,7 @@ namespace Infinity_TestMod
                 {
                     windowRect = GUI.Window(9999, windowRect, DrawWindow, "Mod Menu");
                 }
+                windowRect = ResizableWindow.HandleResize(9999, windowRect);
             }
 
             if (showWindow && showConfigWindow)
@@ -804,6 +805,7 @@ namespace Infinity_TestMod
                 {
                     configWindowRect = GUI.Window(9998, configWindowRect, DrawConfigWindow, "Autoskills Config");
                 }
+                configWindowRect = ResizableWindow.HandleResize(9998, configWindowRect);
             }
 
             if (showWindow && showInterceptorWindow)
@@ -816,6 +818,7 @@ namespace Infinity_TestMod
                 {
                     interceptorWindowRect = GUI.Window(9997, interceptorWindowRect, DrawInterceptorWindow, "Packet Interceptor");
                 }
+                interceptorWindowRect = ResizableWindow.HandleResize(9997, interceptorWindowRect);
             }
 
             if (showWindow && showSnifferWindow)
@@ -828,6 +831,7 @@ namespace Infinity_TestMod
                 {
                     snifferWindowRect = GUI.Window(9996, snifferWindowRect, DrawSnifferWindow, "Packet Sniffer");
                 }
+                snifferWindowRect = ResizableWindow.HandleResize(9996, snifferWindowRect);
             }
 
             if (showWindow && showSenderWindow)
@@ -840,6 +844,7 @@ namespace Infinity_TestMod
                 {
                     senderWindowRect = GUI.Window(9995, senderWindowRect, DrawSenderWindow, "Packet Sender");
                 }
+                senderWindowRect = ResizableWindow.HandleResize(9995, senderWindowRect);
             }
 
             if (showWindow && showReceiverWindow)
@@ -852,6 +857,7 @@ namespace Infinity_TestMod
                 {
                     receiverWindowRect = GUI.Window(9994, receiverWindowRect, DrawReceiverWindow, "Packet Receiver");
                 }
+                receiverWindowRect = ResizableWindow.HandleResize(9994, receiverWindowRect);
             }
 
             if (showWindow && showFakeDevWindow)
@@ -864,6 +870,7 @@ namespace Infinity_TestMod
                 {
                     fakeDevWindowRect = GUI.Window(9992, fakeDevWindowRect, DrawFakeDevWindow, "FakeDev Settings");
                 }
+                fakeDevWindowRect = ResizableWindow.HandleResize(9992, fakeDevWindowRect);
             }
 
             if (showWindow && showShopLoaderWindow)
@@ -876,6 +883,7 @@ namespace Infinity_TestMod
                 {
                     shopLoaderWindowRect = GUI.Window(9991, shopLoaderWindowRect, DrawShopLoaderWindow, "Shop Loader");
                 }
+                shopLoaderWindowRect = ResizableWindow.HandleResize(9991, shopLoaderWindowRect);
             }
 
             if (showWindow && showQuestLoaderWindow)
@@ -888,6 +896,7 @@ namespace Infinity_TestMod
                 {
                     questLoaderWindowRect = GUI.Window(9990, questLoaderWindowRect, DrawQuestLoaderWindow, "Quest Loader");
                 }
+                questLoaderWindowRect = ResizableWindow.HandleResize(9990, questLoaderWindowRect);
             }
 
             if (showWindow && showQuestRunnerWindow)
@@ -900,6 +909,7 @@ namespace Infinity_TestMod
                 {
                     questRunnerWindowRect = GUI.Window(9993, questRunnerWindowRect, DrawQuestRunnerWindow, "Quest Runner");
                 }
+                questRunnerWindowRect = ResizableWindow.HandleResize(9993, questRunnerWindowRect);
             }
 
             if (showWindow && showQuestRunnerWindow && _showChainEditor)
@@ -908,6 +918,7 @@ namespace Infinity_TestMod
                     _chainEditorWindowRect = GUI.Window(9985, _chainEditorWindowRect, DrawChainEditorWindow, "Chain Editor", windowStyle);
                 else
                     _chainEditorWindowRect = GUI.Window(9985, _chainEditorWindowRect, DrawChainEditorWindow, "Chain Editor");
+                _chainEditorWindowRect = ResizableWindow.HandleResize(9985, _chainEditorWindowRect);
             }
 
             if (showWindow && showFunWindow)
@@ -920,6 +931,7 @@ namespace Infinity_TestMod
                 {
                     funWindowRect = GUI.Window(9989, funWindowRect, DrawFunWindow, "Fun");
                 }
+                funWindowRect = ResizableWindow.HandleResize(9989, funWindowRect);
             }
 
             if (showWindow && showExtraFunWindow)
@@ -932,6 +944,7 @@ namespace Infinity_TestMod
                 {
                     extraFunWindowRect = GUI.Window(9987, extraFunWindowRect, DrawExtraFunWindow, "Extra Fun");
                 }
+                extraFunWindowRect = ResizableWindow.HandleResize(9987, extraFunWindowRect);
             }
 
             if (showWindow && showRetroTestsWindow)
@@ -944,14 +957,14 @@ namespace Infinity_TestMod
                 {
                     retroTestsWindowRect = GUI.Window(9988, retroTestsWindowRect, DrawRetroTestsWindow, "Retro Tests");
                 }
+                retroTestsWindowRect = ResizableWindow.HandleResize(9988, retroTestsWindowRect);
             }
         }
 
         private void DrawWindow(int windowID)
         {
-            GUI.Label(new Rect(20, 35, 260, 25), "Test Mod Implementation", labelStyle);
-
-            // Read current access level once for the tier buttons' active marker.
+            float contentWidth = windowRect.width - 40f;  // -20px padding each side
+            GUI.Label(new Rect(20, 35, contentWidth, 25), "Test Mod Implementation", labelStyle);
             int currentLevel = -1;
             try
             {
@@ -1275,9 +1288,10 @@ namespace Infinity_TestMod
             }
             curY += 35f;
 
-            windowRect.height = curY + 20f;
+            if (!Util.ResizableWindow.WasManuallyResized(9999))
+                windowRect.height = curY + 20f;
 
-            GUI.DragWindow(new Rect(0, 0, windowRect.width, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(windowRect.width));
         }
 
         private static string GetSkillKeyName(int slot)
@@ -1340,7 +1354,7 @@ namespace Infinity_TestMod
                 showConfigWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, configWindowRect.width, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(configWindowRect.width));
         }
 
         private void DrawRetroTestsWindow(int windowID)
@@ -1891,8 +1905,9 @@ namespace Infinity_TestMod
             }
             curY += 45f;
 
-            retroTestsWindowRect.height = curY;
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            if (!Util.ResizableWindow.WasManuallyResized(9988))
+                retroTestsWindowRect.height = curY;
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         private static System.Collections.Generic.List<int> ParseCombo(string comboStr)
@@ -2053,7 +2068,7 @@ namespace Infinity_TestMod
                 showInterceptorWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, interceptorWindowRect.width, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(interceptorWindowRect.width));
         }
 
         private void DrawSnifferWindow(int windowID)
@@ -2183,7 +2198,7 @@ namespace Infinity_TestMod
                 showSnifferWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         private void DrawSenderWindow(int windowID)
@@ -2271,7 +2286,7 @@ namespace Infinity_TestMod
                 showSenderWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, senderWindowRect.width, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(senderWindowRect.width));
         }
 
         private void DrawReceiverWindow(int windowID)
@@ -2353,7 +2368,7 @@ namespace Infinity_TestMod
                 showReceiverWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         public static (bool ok, string info) FakeServerPacket(string json)
@@ -2498,7 +2513,7 @@ namespace Infinity_TestMod
                 showFakeDevWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         private void DrawFunWindow(int windowID)
@@ -2595,9 +2610,10 @@ namespace Infinity_TestMod
             curY += 40f;
 
             // Auto-size window to fit current content (collapsed vs catalog-open).
-            funWindowRect.height = curY + 10f;
+            if (!Util.ResizableWindow.WasManuallyResized(9989))
+                funWindowRect.height = curY + 10f;
 
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         // Extra Fun — sibling window for niche spoofs. Currently hosts the
@@ -2768,8 +2784,9 @@ namespace Infinity_TestMod
                 showExtraFunWindow = false;
             curY += 40f;
 
-            extraFunWindowRect.height = curY + 10f;
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            if (!Util.ResizableWindow.WasManuallyResized(9987))
+                extraFunWindowRect.height = curY + 10f;
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         /// <summary>
@@ -3265,7 +3282,7 @@ namespace Infinity_TestMod
                 showShopLoaderWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         private void DrawQuestLoaderWindow(int windowID)
@@ -3336,7 +3353,7 @@ namespace Infinity_TestMod
                 showQuestLoaderWindow = false;
             }
 
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         private void DrawQuestRunnerWindow(int windowID)
@@ -3606,7 +3623,7 @@ namespace Infinity_TestMod
                 GUI.EndScrollView();
             }
 
-            GUI.DragWindow(new Rect(0, 0, winWidth, 30));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(winWidth));
         }
 
         // ------- Chain Editor logic + GUI (INJECTED) -------
@@ -3631,7 +3648,7 @@ namespace Infinity_TestMod
                 saveAsName  = editingName;
                 entries = (pick!=null && QuestChains.Get(pick)!=null) ?
                           QuestChains.Get(pick).Select(e=>new QuestChains.Entry{
-                              qid=e.qid,area=e.area,frame=e.frame,pad=e.pad,iters=e.iters}).ToList() :
+                              qid=e.qid,area=e.area,frame=e.frame,pad=e.pad,items=e.items}).ToList() :
                           new List<QuestChains.Entry>();
                 errorMsg = null;
                 editingExisting = (pick != null && QuestChains.Get(pick) != null);
@@ -3706,12 +3723,12 @@ namespace Infinity_TestMod
                 string sarea  = GUI.TextField(new Rect(56,  ey, 78, 26), ent.area  ?? "",     textFieldStyle); ent.area  = sarea;
                 string sframe = GUI.TextField(new Rect(140, ey, 68, 26), ent.frame ?? "",     textFieldStyle); ent.frame = sframe;
                 string spad   = GUI.TextField(new Rect(214, ey, 58, 26), ent.pad   ?? "Spawn", textFieldStyle); ent.pad   = spad;
-                string siters = GUI.TextField(new Rect(278, ey, 38, 26), ent.iters.ToString(), textFieldStyle); int iters = ent.iters; int.TryParse(siters, out iters); ent.iters = iters < 1 ? 1 : iters;
+                string sitems = GUI.TextField(new Rect(278, ey, 38, 26), ent.items.ToString(), textFieldStyle); int itemsval = ent.items; int.TryParse(sitems, out itemsval); ent.items = itemsval < 1 ? 1 : itemsval;
                 if (GUI.Button(new Rect(322, ey, 28, 26), "-", closeButtonStyle)) { _chainEditState.entries.RemoveAt(i); break; }
                 _chainEditState.entries[i] = ent;
             }
             if (GUI.Button(new Rect(0, _chainEditState.entries.Count * 32f, 28, 26), "+", closeButtonStyle))
-                _chainEditState.entries.Add(new QuestChains.Entry { qid = 1, area = "", frame = "", pad = "Spawn", iters = 1 });
+_chainEditState.entries.Add(new QuestChains.Entry { qid = 1, area = "", frame = "", pad = "Spawn", items = 1 });
             GUI.EndScrollView();
             y += entrH + 6f;
 
@@ -3747,7 +3764,7 @@ namespace Infinity_TestMod
                 GUI.EndScrollView();
             }
 
-            GUI.DragWindow(new Rect(0, 0, W, 26));
+            GUI.DragWindow(Util.ResizableWindow.TitleBarDragRect(W, 26f));
         }
 
         private static void SaveEditedChain(bool saveAs)
@@ -3893,7 +3910,7 @@ namespace Infinity_TestMod
                 o["area"]  = ent.area  ?? "";
                 o["frame"] = ent.frame ?? "";
                 o["pad"]   = string.IsNullOrEmpty(ent.pad) ? "Spawn" : ent.pad;
-                o["iters"] = ent.iters < 1 ? 1 : ent.iters;
+                o["items"] = ent.items < 1 ? 1 : ent.items;
                 arr.Add(o);
             }
             return arr;

@@ -140,16 +140,16 @@ namespace Infinity_TestMod.Util
             ChainName = chainName ?? "";
             ChainIndex = 0;
             var first = entries[0];
-            BindEntry(first.qid, first.iters, first.area, first.frame, first.pad);
+            BindEntry(first.qid, first.items, first.area, first.frame, first.pad);
             _autoskillsWasOn = TestMod.autoskillsActive;
             Log($"[start] chain '{chainName}' ({entries.Count} entries) — first: {first}");
             EnterState(NeedsCellHop() ? RunState.Traveling : RunState.Accepting);
         }
 
-        void BindEntry(int qid, int iters, string area, string frame, string pad)
+        void BindEntry(int qid, int items, string area, string frame, string pad)
         {
             QuestID = qid;
-            Iterations = Math.Max(1, iters);
+            Iterations = Math.Max(1, items);
             TargetArea = area ?? "";
             TargetFrame = frame ?? "";
             TargetPad = string.IsNullOrEmpty(pad) ? "Spawn" : pad;
@@ -264,7 +264,7 @@ namespace Infinity_TestMod.Util
             {
                 ChainIndex++;
                 var next = ChainEntries[ChainIndex];
-                BindEntry(next.qid, next.iters, next.area, next.frame, next.pad);
+                BindEntry(next.qid, next.items, next.area, next.frame, next.pad);
                 Log($"[chain] {ChainIndex + 1}/{ChainEntries.Count}: {next}");
                 EnterState(NeedsCellHop() ? RunState.Traveling : RunState.Accepting);
                 return;

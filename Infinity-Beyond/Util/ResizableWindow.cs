@@ -26,14 +26,19 @@ namespace Infinity_TestMod.Util
         private static readonly Color _gripDefault = new Color(0.28f, 0.31f, 0.37f, 1.0f);
         private static readonly Color _gripHover  = new Color(0.47f, 0.52f, 0.62f, 1.0f);
 
-        // Per-call wrapper state — avoids allocating a closure display-class
-        // every DrawScaledWindow invocation.  Static because OnGUI is single-
-        // threaded and only one wrapper executes at a time.
-        private static float _wrapLocalH;
-        private static float _wrapScale;
-        private static float _wrapBaseW;
-        private static Rect  _wrapScreenRect;
-        private static GUI.WindowFunction _wrapInner;
+        // Per-window wrapper state. GUI.Window defers callbacks until after all
+        // windows are registered in the same OnGUI pass, so a single static slot
+        // would leave every window drawing with the last registered callback.
+        private struct WrapState
+        {
+            public float LocalH;
+            public float Scale;
+            public float BaseW;
+            public Rect ScreenRect;
+            public GUI.WindowFunction Inner;
+        }
+
+        private static readonly Dictionary<int, WrapState> _wrapStates = new();
 
         public static bool WasManuallyResized(int windowId) => _userResized.Contains(windowId);
 
@@ -111,13 +116,14 @@ namespace Infinity_TestMod.Util
             
             Rect newScaledRect;
 
-            // Stash state into statics so the wrapper callback avoids a
-            // closure allocation (OnGUI is single-threaded).
-            _wrapLocalH    = screenRect.height / scale;
-            _wrapScale     = scale;
-            _wrapBaseW     = baseW;
-            _wrapScreenRect = screenRect;
-            _wrapInner     = func;
+            _wrapStates[id] = new WrapState
+            {
+                LocalH = screenRect.height / scale,
+                Scale = scale,
+                BaseW = baseW,
+                ScreenRect = screenRect,
+                Inner = func,
+            };
 
             if (style != null)
             {
@@ -195,12 +201,14 @@ namespace Infinity_TestMod.Util
             }
         }
 
-        // Static wrapper callback — reads captured state from the _wrap* statics.
         private static void WrapperCallback(int winId)
         {
-            HandleResizeEvents(winId, _wrapBaseW, _wrapLocalH, _wrapScale, _wrapScreenRect);
-            _wrapInner(winId);
-            DrawResizeBoxVisual(_wrapBaseW, _wrapLocalH);
+            if (!_wrapStates.TryGetValue(winId, out WrapState state))
+                return;
+
+            HandleResizeEvents(winId, state.BaseW, state.LocalH, state.Scale, state.ScreenRect);
+            state.Inner(winId);
+            DrawResizeBoxVisual(state.BaseW, state.LocalH);
         }
 
         private static void DrawResizeBoxVisual(float baseW, float localH)

@@ -381,14 +381,22 @@ namespace Infinity_TestMod
             SaveSkillsets();
         }
 
+        // Cached reflection for skill-slot "disabled" field — resolved once.
+        private static FieldInfo _fSkillDisabled;
+        private static bool _fSkillDisabledResolved;
+
         private static bool IsSkillSlotButtonDisabled(SkillSlotButton button)
         {
             try
             {
-                FieldInfo field = typeof(SkillSlotButton).GetField("disabled", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (field != null)
+                if (!_fSkillDisabledResolved)
                 {
-                    return (bool)field.GetValue(button);
+                    _fSkillDisabled = typeof(SkillSlotButton).GetField("disabled", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    _fSkillDisabledResolved = true;
+                }
+                if (_fSkillDisabled != null)
+                {
+                    return (bool)_fSkillDisabled.GetValue(button);
                 }
             }
             catch { }
@@ -915,7 +923,6 @@ namespace Infinity_TestMod
 
             if (showWindow && showRetroTestsWindow)
             {
-                MelonLogger.Msg($"[RetroTests] Drawing Retro Tests window. Rect: {retroTestsWindowRect}");
                 retroTestsWindowRect = ResizableWindow.DrawScaledWindow(9988, retroTestsWindowRect, 320f, DrawRetroTestsWindow, "Retro Tests", windowStyle);
                 retroTestsWindowRect = ResizableWindow.HandleResize(9988, retroTestsWindowRect);
             }
@@ -4237,35 +4244,63 @@ namespace Infinity_TestMod
             return distance <= 0f;
         }
 
+        // Cached reflection handles for cooldown checks — resolved once.
+        private static FieldInfo _fPendingCooldown;
+        private static FieldInfo _fCooldownOverlay;
+        private static System.Reflection.MethodInfo _mCooldownActive;
+        private static FieldInfo _fCdRemain;
+        private static bool _cooldownFieldsResolved;
+        private static System.Type _cooldownOverlayType;
+
+        private static void ResolveCooldownFields()
+        {
+            if (_cooldownFieldsResolved) return;
+            _cooldownFieldsResolved = true;
+            const System.Reflection.BindingFlags Flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            _fPendingCooldown = typeof(SkillSlotButton).GetField("pendingCooldown", Flags);
+            _fCooldownOverlay = typeof(SkillSlotButton).GetField("cooldown", Flags);
+            // Method/field on the overlay type are resolved lazily on first
+            // non-null overlay instance since we don't know the concrete type
+            // at static-init time.
+        }
+
         private static bool IsSkillOnCooldown(SkillSlotButton button)
         {
             if (button == null) return false;
             try
             {
+                ResolveCooldownFields();
+
                 // Check pendingCooldown first
-                System.Reflection.FieldInfo pendingField = typeof(SkillSlotButton).GetField("pendingCooldown", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (pendingField != null && (bool)pendingField.GetValue(button))
+                if (_fPendingCooldown != null && (bool)_fPendingCooldown.GetValue(button))
                 {
                     return true;
                 }
 
                 // Check CooldownOverlay
-                System.Reflection.FieldInfo cdField = typeof(SkillSlotButton).GetField("cooldown", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (cdField != null)
+                if (_fCooldownOverlay != null)
                 {
-                    object cdObj = cdField.GetValue(button);
+                    object cdObj = _fCooldownOverlay.GetValue(button);
                     if (cdObj != null)
                     {
-                        System.Reflection.MethodInfo method = cdObj.GetType().GetMethod("cooldownActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        if (method != null)
+                        // Lazily resolve method/field from the overlay's concrete type
+                        System.Type cdType = cdObj.GetType();
+                        if (_cooldownOverlayType != cdType)
                         {
-                            return (bool)method.Invoke(cdObj, null);
+                            _cooldownOverlayType = cdType;
+                            const System.Reflection.BindingFlags F = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                            _mCooldownActive = cdType.GetMethod("cooldownActive", F);
+                            _fCdRemain = cdType.GetField("cdRemain", F);
                         }
 
-                        System.Reflection.FieldInfo remainField = cdObj.GetType().GetField("cdRemain", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        if (remainField != null)
+                        if (_mCooldownActive != null)
                         {
-                            float remain = (float)remainField.GetValue(cdObj);
+                            return (bool)_mCooldownActive.Invoke(cdObj, null);
+                        }
+
+                        if (_fCdRemain != null)
+                        {
+                            float remain = (float)_fCdRemain.GetValue(cdObj);
                             return remain > 0f;
                         }
                     }

@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
+
 
 namespace Infinity_TestMod.Util
 {
@@ -18,6 +20,20 @@ namespace Infinity_TestMod.Util
         private static readonly Dictionary<int, float> _baseHeights = new();
 
         private static Vector2 _parentMousePosition = Vector2.zero;
+
+        // Cached resize-grip style — allocated once, colours swapped per-call.
+        private static GUIStyle _gripStyle;
+        private static readonly Color _gripDefault = new Color(0.28f, 0.31f, 0.37f, 1.0f);
+        private static readonly Color _gripHover  = new Color(0.47f, 0.52f, 0.62f, 1.0f);
+
+        // Per-call wrapper state — avoids allocating a closure display-class
+        // every DrawScaledWindow invocation.  Static because OnGUI is single-
+        // threaded and only one wrapper executes at a time.
+        private static float _wrapLocalH;
+        private static float _wrapScale;
+        private static float _wrapBaseW;
+        private static Rect  _wrapScreenRect;
+        private static GUI.WindowFunction _wrapInner;
 
         public static bool WasManuallyResized(int windowId) => _userResized.Contains(windowId);
 
@@ -94,29 +110,22 @@ namespace Infinity_TestMod.Util
             Rect scaledRect = new Rect(screenRect.x / scale, screenRect.y / scale, baseW, screenRect.height / scale);
             
             Rect newScaledRect;
-            
-            // Wrapper callback to render content and draw the resize handle on top
-            GUI.WindowFunction wrapperFunc = (winId) =>
-            {
-                float localH = screenRect.height / scale;
 
-                // Process resize events FIRST so we capture mouse clicks before GUI.DragWindow can consume them
-                HandleResizeEvents(winId, baseW, localH, scale, screenRect);
-                
-                // Draw window contents
-                func(winId);
-                
-                // Draw the resize handle visually on top of everything
-                DrawResizeBoxVisual(baseW, localH);
-            };
+            // Stash state into statics so the wrapper callback avoids a
+            // closure allocation (OnGUI is single-threaded).
+            _wrapLocalH    = screenRect.height / scale;
+            _wrapScale     = scale;
+            _wrapBaseW     = baseW;
+            _wrapScreenRect = screenRect;
+            _wrapInner     = func;
 
             if (style != null)
             {
-                newScaledRect = GUI.Window(id, scaledRect, wrapperFunc, title, style);
+                newScaledRect = GUI.Window(id, scaledRect, WrapperCallback, title, style);
             }
             else
             {
-                newScaledRect = GUI.Window(id, scaledRect, wrapperFunc, title);
+                newScaledRect = GUI.Window(id, scaledRect, WrapperCallback, title);
             }
             
             // Restore matrix
@@ -186,26 +195,32 @@ namespace Infinity_TestMod.Util
             }
         }
 
+        // Static wrapper callback — reads captured state from the _wrap* statics.
+        private static void WrapperCallback(int winId)
+        {
+            HandleResizeEvents(winId, _wrapBaseW, _wrapLocalH, _wrapScale, _wrapScreenRect);
+            _wrapInner(winId);
+            DrawResizeBoxVisual(_wrapBaseW, _wrapLocalH);
+        }
+
         private static void DrawResizeBoxVisual(float baseW, float localH)
         {
-            // Position the box in the bottom-right corner of the window
             Rect handleRect = new Rect(baseW - 20f, localH - 20f, 20f, 20f);
-            
-            // Draw a neat label with diagonal slashes "///"
-            GUIStyle gripStyle = new GUIStyle();
-            gripStyle.alignment = TextAnchor.LowerRight;
-            gripStyle.fontSize = 11;
-            gripStyle.fontStyle = FontStyle.Bold;
-            
-            // Hover highlight color matching
+
+            // Lazily create the cached grip style once.
+            if (_gripStyle == null)
+            {
+                _gripStyle = new GUIStyle();
+                _gripStyle.alignment = TextAnchor.LowerRight;
+                _gripStyle.fontSize = 11;
+                _gripStyle.fontStyle = FontStyle.Bold;
+                _gripStyle.padding = new RectOffset(0, 4, 0, 4);
+            }
+
             bool isHovering = handleRect.Contains(Event.current.mousePosition);
-            gripStyle.normal.textColor = isHovering 
-                ? new Color(0.47f, 0.52f, 0.62f, 1.0f) // Highlight color
-                : new Color(0.28f, 0.31f, 0.37f, 1.0f); // Default dark grey
-                
-            gripStyle.padding = new RectOffset(0, 4, 0, 4);
-            
-            GUI.Label(handleRect, "///", gripStyle);
+            _gripStyle.normal.textColor = isHovering ? _gripHover : _gripDefault;
+
+            GUI.Label(handleRect, "///", _gripStyle);
         }
     }
 }

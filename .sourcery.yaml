@@ -1,7 +1,0 @@
-# .sourcery.yaml
-clone_detection:
-  enabled: true
-
-# Ensure this section isn't set to 'false' or skipping your files
-refactor:
-  skip: []

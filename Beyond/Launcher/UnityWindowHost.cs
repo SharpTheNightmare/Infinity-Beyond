@@ -341,6 +341,33 @@ namespace Launcher
                     {
                         try
                         {
+                            // Copy BeyondAgent.dll and 0Harmony.dll from launcher directory to game's managed directory
+                            string launcherDir = AppDomain.CurrentDomain.BaseDirectory;
+                            string sourceAgent = System.IO.Path.Combine(launcherDir, "BeyondAgent.dll");
+                            string sourceHarmony = System.IO.Path.Combine(launcherDir, "0Harmony.dll");
+
+                            if (System.IO.File.Exists(sourceAgent))
+                            {
+                                string destAgent = System.IO.Path.Combine(managedDir, "BeyondAgent.dll");
+                                System.IO.File.Copy(sourceAgent, destAgent, true);
+                                Trace.WriteLine($"[Launcher] Copied BeyondAgent.dll to {destAgent}");
+                            }
+                            else
+                            {
+                                Trace.WriteLine($"[Launcher] Warning: BeyondAgent.dll not found in launcher directory: {sourceAgent}");
+                            }
+
+                            if (System.IO.File.Exists(sourceHarmony))
+                            {
+                                string destHarmony = System.IO.Path.Combine(managedDir, "0Harmony.dll");
+                                System.IO.File.Copy(sourceHarmony, destHarmony, true);
+                                Trace.WriteLine($"[Launcher] Copied 0Harmony.dll to {destHarmony}");
+                            }
+                            else
+                            {
+                                Trace.WriteLine($"[Launcher] Warning: 0Harmony.dll not found in launcher directory: {sourceHarmony}");
+                            }
+
                             AssemblyPatcher.Patch(managedDir);
                         }
                         catch (Exception ex)

@@ -35,6 +35,14 @@ if exist "%DEST%\libSkiaSharp.dll" (
     del /F /Q "%DEST%\libSkiaSharp.dll"
     echo   - Deleted libSkiaSharp.dll
 )
+if exist "%DEST%\BeyondAgent.dll" (
+    del /F /Q "%DEST%\BeyondAgent.dll"
+    echo   - Deleted BeyondAgent.dll
+)
+if exist "%DEST%\0Harmony.dll" (
+    del /F /Q "%DEST%\0Harmony.dll"
+    echo   - Deleted 0Harmony.dll
+)
 if exist "%DEST%\*.deps.json" (
     del /F /Q "%DEST%\*.deps.json"
     echo   - Deleted *.deps.json
@@ -46,6 +54,10 @@ if exist "%DEST%\*.runtimeconfig.json" (
 if exist "%DEST%\runtimes" (
     rmdir /S /Q "%DEST%\runtimes"
     echo   - Removed runtimes folder
+)
+if exist "%DEST%\BeyondLauncher_*.zip" (
+    del /F /Q "%DEST%\BeyondLauncher_*.zip"
+    echo   - Deleted generated ZIP packages
 )
 
 :: 2. Delete build/bin/obj folders recursively

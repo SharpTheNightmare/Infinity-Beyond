@@ -48,10 +48,10 @@
                             <StackPanel Spacing="10">
                                 <TextBlock Text="Quick Actions" Classes="Header" Margin="0"/>
 
-                                <!-- Camera Zoom view slider -->
+                                <!-- Camera Distance slider -->
                                 <StackPanel Spacing="3">
                                     <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Text="Camera Zoom View" FontSize="11" Foreground="#C5C7D0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Camera Distance" FontSize="11" Foreground="#C5C7D0" VerticalAlignment="Center"/>
                                         <Button Grid.Column="1" Content="Reset" Command="{Binding ResetCameraZoomCommand}" Padding="5,2" FontSize="10"/>
                                     </Grid>
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
@@ -125,7 +125,7 @@
 
                 <!-- Footer Area -->
                 <Separator Grid.Row="2" Margin="0" Height="1" Background="#202026" VerticalAlignment="Top"/>
-                <TextBlock Grid.Row="2" Text="v0.1.0 (Beyond Standalone Edition)" FontSize="9" Foreground="#44454E" HorizontalAlignment="Center" Margin="10,12"/>
+                <TextBlock Grid.Row="2" Text="v0.1.1 (Beyond Standalone Edition)" FontSize="9" Foreground="#44454E" HorizontalAlignment="Center" Margin="10,12"/>
             </Grid>
         </Border>
 
@@ -140,18 +140,6 @@
             <!-- Invisible anchor at the left edge of the game area, vertically centered -->
             <Control Name="PopupAnchor" Width="0" Height="0" HorizontalAlignment="Left" VerticalAlignment="Center" IsVisible="True"/>
 
-            <!-- Floating Toggle Button Popup (draws on top of native Win32 window) -->
-            <Popup Name="CollapseButtonPopup" IsOpen="True" IsLightDismissEnabled="False"
-                   PlacementTarget="{Binding #PopupAnchor}" Placement="Right">
-                <ToggleButton Name="CollapseButton" 
-                              Width="20" Height="40"
-                              IsChecked="{Binding #Sidebar.IsVisible, Mode=TwoWay}"
-                              CornerRadius="0,4,4,0"
-                              BorderThickness="0,1,1,1"
-                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="0">
-                    <TextBlock Text="⇋" Foreground="#00E5FF" FontSize="14" FontWeight="Bold"/>
-                </ToggleButton>
-            </Popup>
         </Grid>
     </Grid>
 </UserControl>
